@@ -68,6 +68,7 @@ const int   STAKE    = 10000000000000; ;; 10000 TON
 
 () update_verifier(int id, slice new_settings, slice sender_address, int balance, int coins_sent) impure inline {
     slice admin = sender_address;
+    throw_if(402, new_settings.slice_depth() > 10); ;; should allow for 100 nodes, prevents storage attack
     (slice cfg, int ok) = storage::verifiers.udict_get?(256, id);
     if (ok) { ;; exists, check is admin
         admin = cfg~load_msg_addr();

@@ -94,6 +94,36 @@ describe('registry smc', () => {
         expect(body.readUint(32).toNumber()).toEqual(0)
         expect(body.readBuffer(body.remaining/8).toString()).toEqual("You successfully updated verifier data")
     })
+   
+    it('should reject verifier updates with too large config', async () => {
+        let cfg = await genDefaultConfig()
+        let contract = await RegistryLocal.createFromConfig(cfg.data, 1)
+
+        let kp3 = await randomKeyPair()
+
+        let res = await contract.contract.sendInternalMessage(new InternalMessage({
+            to: contract.address,
+            from: ADMIN1_ADDRESS,
+            value: toNano(1),
+            bounce: false,
+            body: new CommonMessageInfo({
+                body: new CellMessage(
+                    Queries.updateVerifier({
+                        id: sha256BN("verifier1"),
+                        quorum: 7,
+                        endpoints: 
+                        new Map<BN, number>(Array(1000).fill("").map( (_, i) => [
+                            new BN(kp3.publicKey).sub(new BN(i)),
+                            ip2num("10.0.0.0")
+                        ])),
+                        name: "verifier1",
+                        marketingUrl: "https://myverifier.com"
+                    }))
+            }),
+        }))
+
+        expect(res.exit_code).toEqual(402)
+    })
 
     it('should not update verifier', async () => {
         let cfg = await genDefaultConfig()
