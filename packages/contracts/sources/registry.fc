@@ -20,22 +20,22 @@ const slice UPDATED_TEXT    = "You successfully updated verifier data";
 const int   EXIT_FEE = 200000000;      ;; 0.20 TON
 const int   STAKE    = 10000000000000; ;; 10000 TON
 
-() save_data() impure {
+() save_data() impure inline {
     set_data(begin_cell()
             .store_dict(storage::verifiers)
             .store_uint(storage::verifiers_num,8)
             .end_cell());
 }
 
-() load_data() impure {
+() load_data() impure inline {
     slice data = get_data().begin_parse();
     storage::verifiers = data~load_dict();
     storage::verifiers_num = data~load_uint(8);
 }
 
-() send_msg(int mode, slice to, int amount, slice comment) impure {
+() send_msg(int mode, slice to, int amount, slice comment) impure inline {
     var msg = begin_cell()
-            .store_uint(0x10, 6)
+            .store_uint(0x10, 6) ;; non bouncable
             .store_slice(to)
             .store_coins(amount)
             .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
@@ -80,7 +80,7 @@ const int   STAKE    = 10000000000000; ;; 10000 TON
         throw_if(410, coins_sent < STAKE);
         throw_if(419, storage::verifiers_num >= const::max_verifiers);
 
-        ;; return excess
+        ;; return excess. send mode 1 (contract pays for the message transfer)
         send_msg(1, admin, coins_sent - STAKE, REGISTERED_TEXT);
 
         storage::verifiers_num += 1;
@@ -106,7 +106,7 @@ const int   STAKE    = 10000000000000; ;; 10000 TON
 
     (slice verifier, int ok) = storage::verifiers.udict_get?(256, verifier_id);
     throw_if(404, ok == 0);
-    verifier~load_msg_addr();
+    verifier~load_msg_addr(); ;; skip admin
     int quorum = verifier~load_uint(8);
     cell pub_key_endpoints = verifier.preload_dict();
 
@@ -141,7 +141,7 @@ const int   STAKE    = 10000000000000; ;; 10000 TON
     cell payload_to_forward = msg_data~load_ref();
 
     send_raw_message( begin_cell()
-            .store_uint(0x10, 6)
+            .store_uint(0x10, 6) ;; non bouncable
             .store_slice(target_addr)
             .store_coins(0)
             .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
