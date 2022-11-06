@@ -20,20 +20,20 @@ const slice UPDATED_TEXT    = "You successfully updated verifier data";
 const int   EXIT_FEE = 200000000;      ;; 0.20 TON
 const int   STAKE    = 10000000000000; ;; 10000 TON
 
-() save_data() impure inline {
+() save_data() impure inline_ref {
     set_data(begin_cell()
             .store_dict(storage::verifiers)
             .store_uint(storage::verifiers_num,8)
             .end_cell());
 }
 
-() load_data() impure inline {
+() load_data() impure inline_ref {
     slice data = get_data().begin_parse();
     storage::verifiers = data~load_dict();
     storage::verifiers_num = data~load_uint(8);
 }
 
-() send_msg(int mode, slice to, int amount, slice comment) impure inline {
+() send_msg(int mode, slice to, int amount, slice comment) impure inline_ref {
     var msg = begin_cell()
             .store_uint(0x10, 6) ;; non bouncable
             .store_slice(to)
